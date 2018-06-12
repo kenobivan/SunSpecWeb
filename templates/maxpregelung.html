@@ -1,0 +1,91 @@
+{% extends 'layout.html' %}
+
+{% block quregelung %}
+<div id="containerx" class="delete" style="width:48%;margin-right:10px;margin-top:25px; background-color:#DBDBDB; border-radius: 25px; padding:20px; padding-bottom:50px;float:right;">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+		  <a class="navbar-brand" href="#">Regelungen</a>
+		  
+		  </button>
+		  <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+			<div class="navbar-nav">
+			  <a class="nav-item nav-link" href="#" name="quregelung.html">Q(U)<span class="sr-only">(current)</span></a>
+			  <a class="nav-item nav-link" href="#" name="quouregelung.html">Q/Pmax(U)</a>
+			  <a class="nav-item nav-link active" href="#" name="maxpregelung.html">max-P</a>
+			  <a class="nav-item nav-link" href="#" name="puregelung.html">P(U)</a>
+			</div>
+		  </div>
+		</nav>
+        
+                <div class="maxpregelung" id="reload2" style="margin-top:10px;">
+                    <form>  
+						<p>Maximale Leistung Transformator: <span id="maximumPower">{{values['wmax']}}</span>W</p>
+						<p>Nach Regelung: {{values['result']}}W</p>  
+                        <p>Eingabe Wert 0-100</p>
+                        <input value="{{ values['valueMaxP'] }}" id="maxPvalue" style="width:10%;">in %
+                        <br><br>
+                        <button type="submit" id="maxValueButton">Submit</button>
+                        <h4 id="modelText" style="color:red;"></h4>
+                    </form>            
+                </div>
+        
+</div>
+
+
+
+<script>
+	
+	
+	window.setInterval(function(){
+		  if (($("#maxPvalue").val())>0 && $("#maxPvalue").val() <= 100) {
+			  var text = "Achtung! Mit Betätigen des Submit-Buttons wird folgende Regelung gespeichert: ";
+			  $("#modelText").text(text + $("#maxPvalue").val() + "% von " + $("#maximumPower").text() + "W (" + ($("#maxPvalue").val()*parseFloat($("#maximumPower").text())*0.01 ) + "W)");
+		  } else {
+			  var text = "Ungültige Eingabe!";
+			  $("#modelText").text(text);
+			}
+		  
+		}, 1000);
+	
+      function submitMaxP(maxPvalue) {
+                var checklist = [];
+                checklist[0] = checking("qu");
+				checklist[1] = checking("pu");
+				checklist[2] = checking("maxp");
+                var valueObject = {
+                        
+                        maxPvalue : maxPvalue,
+                        checklist: checklist,
+                }
+                $.post('control', JSON.stringify(valueObject), function(response){
+                        window.location.replace("{{ url_for( 'index' , html='maxpregelung.html' ) }}");
+              });}
+              
+      $("#maxValueButton").on('click', function(){
+      if ($("#maxPvalue").val() <= 100 && $("#maxPvalue").val() >=0) {
+        submitMaxP($("#maxPvalue").val());
+      } else {
+         alert("Eigegebener Wert nicht im vorgegebenen Bereich");     
+              }});
+      
+
+      
+      $('.nav-item').on('click',function() {
+					  
+					html = $(this).attr('name');
+					if (html=="quregelung.html") {
+						window.location.replace("{{ url_for( 'index' , html='quregelung.html' ) }}");
+					}
+					if (html=="puregelung.html") {
+						window.location.replace("{{ url_for( 'index' , html='puregelung.html' ) }}");
+					}
+					if (html=="quouregelung.html") {
+						window.location.replace("{{ url_for( 'index' , html='quouregelung.html' ) }}");
+					}
+					if (html=="maxpregelung.html") {
+						window.location.replace("{{ url_for( 'index' , html='maxpregelung.html' ) }}");
+					}
+			});
+        
+      
+</script>
+{% endblock %}

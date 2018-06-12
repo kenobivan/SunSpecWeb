@@ -1,0 +1,68 @@
+	<div id="reload">
+		<div class="wrap">
+		  <div class="container" style="float:left;">
+			<span>Q(U)</span>
+			<input data-index="0" id="qu" type="checkbox" />
+			<label for="qu"></label>
+		  </div>
+		  <div class="container" style="float:left;">
+			<span>P(U)</span>
+			<input data-index="1" id="pu" type="checkbox" />
+			<label for="pu"></label>
+		  </div>
+		  <div class="container">
+			<span>max.P</span>
+			<input data-index="2" id="maxp" type="checkbox" />
+			<label for="maxp"></label>
+		  </div>
+		</div>
+	</div>
+	
+	
+	
+	
+	
+	<script>
+		
+		var checklist = [];
+		
+		var actCntrl = {{ actCntrl|safe }};
+		if (actCntrl[0] == "true"){
+			document.getElementById("qu").checked = true;
+			checklist.push(true);}
+		else {
+			document.getElementById("qu").checked = false;
+			checklist.push(false);}
+			
+		if (actCntrl[1] == "true"){
+			document.getElementById("pu").checked = true;
+			checklist.push(true);}
+		else {
+			document.getElementById("pu").checked = false;
+			checklist.push(false);}
+			
+		if (actCntrl[2] == "true"){
+			document.getElementById("maxp").checked = true;
+			checklist.push(true);}
+		else {
+			document.getElementById("maxp").checked = false;
+			checklist.push(false);}
+		
+		
+		
+		
+		function checking(textid){
+			var check;
+			if(document.getElementById(textid).checked) {
+				check = "true";
+			} 
+			else {
+				check = "false";
+			};
+			return check;
+		}
+		
+			
+		
+		
+	</script>

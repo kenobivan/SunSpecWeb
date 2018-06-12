@@ -1,0 +1,200 @@
+<script>
+		
+		
+		
+		function loadGraph() {
+				var d1 = [];
+			{% for value in values['valuesquo'] %}
+				d1.push([{{ value[0] }}, {{ value[2] }}]);
+			{% endfor %}
+			
+			
+			$.plot("#QUGraph", [{
+				data: d1,
+				lines: { show: true },
+				points: { show: true }
+			},]);
+		}
+				
+		loadGraph();
+		var amount = 0;
+        {% for dict_item in values['valuesquo'] %}
+                        amount += 1;
+		{% endfor %}
+			
+		$('#modalButton').on('click', function(){
+				var j;
+				var Vlist = [];
+				var Quolist = [];
+				var VArlist = [];
+				for (i = 1; i < amount+1; i++) {
+					var searchV = 'input[name="V' + i + '"]';
+					var searchQuo = 'input[name="Quo' + i + '"]';
+					var searchVAr = '#VAr' + i;
+					if ($(searchV).val() < 0) {
+						alert("Fehler: Bitte überprüfe die eingegebenen SPANNUNGswerte");
+						return false;
+					}
+					Vlist.push($(searchV).val());
+					Quolist.push($(searchQuo).val());
+					VArlist.push($(searchVAr).text());
+				}
+				var amountOld = 0;
+                {% for dict_item in values['valuesquo'] %}
+                        amountOld += 1;
+				{% endfor %}
+				$('#newModal').html('<h4>Neu:</h4>');
+				for (k= 0; k < Vlist.length; k++){
+					if ((k+1)>amountOld){
+					$('#newModal').append('<p>V' + (k+1) + ': ' + Vlist[k] + ' (in %) - VAr' + (k+1) + ': ' + Quolist[k] + '</p><p>VAr' + (k+1) + ': ' + ({{values['wmax']}}*Quolist[k]) + '(in VAr)</p>');
+				 } else {
+					 $('#newModal').append('<p>V' + (k+1) + ': ' + Vlist[k] + ' (in %) - VAr' + (k+1) + ': ' + Quolist[k] + '</p><p>VAr' + (k+1) + ': ' + VArlist[k] + '(in VAr)</p>');
+				}
+				}
+			});
+			
+			$('#submitQU').bind('click', function() {
+				totalReload(amount);
+			});
+		
+				  
+		
+		
+		$("body").on("keyup", "#extraRow", function(event){
+			if(event.keyCode==13){
+				var j;
+				var Vlist = [];
+				var Quolist = [];
+				var VArlist = [];
+				for (i = 1; i < amount+1; i++) {
+					var searchV = 'input[name="V' + i + '"]';
+					var searchQuo = 'input[name="Quo' + i + '"]';
+					var searchVAr = '#VAr' + i;
+					if ($(searchV).val() < 0) {
+						alert("Fehler: Bitte überprüfe die eingegebenen SPANNUNGswerte");
+						return false;
+					}
+					Vlist.push($(searchV).val());
+					Quolist.push($(searchQuo).val());
+					VArlist.push($(searchVAr).text());
+				}
+				var amountOld = 0;
+                {% for dict_item in values['valuesquo'] %}
+                        amountOld += 1;
+				{% endfor %}
+				$('#newModal').html('<h4>Neu:</h4>');
+				for (k= 0; k < Vlist.length; k++){
+					if ((k+1)>amountOld){
+					$('#newModal').append('<p>V' + (k+1) + ': ' + Vlist[k] + ' (in %) - VAr' + (k+1) + ': ' + Quolist[k] + '</p><p>VAr' + (k+1) + ': ' + ({{values['wmax']}}*Quolist[k]) + '(in VAr)</p>');
+				 } else {
+					 $('#newModal').append('<p>V' + (k+1) + ': ' + Vlist[k] + ' (in %) - VAr' + (k+1) + ': ' + Quolist[k] + '</p><p>VAr' + (k+1) + ': ' + VArlist[k] + '(in VAr)</p>');
+				}
+				}
+				$('#Modal').modal('show');
+			}
+		});
+		
+		
+		
+		$(".plus").click(function(){
+			amount += 1;
+			$("#extraRow").append("<div class='form-row'><div class='col-sm-'><p>Spannung (in %):</p><input type='text' class='form-control' name='V" + amount + "' style='width:30%;'></div><div class='col-sm-'><p>Q/Wmax:</p><input type='text' class='form-control' name='Quo" + amount + "' style='width:30%;'></div></div>");
+			
+		});
+		
+		
+		
+		$(".quregelung").on("click", ".minus", function(){
+            deleteEntry(event.target.id - 1);
+			amount -= 1;
+		});
+                
+		$('.nav-item').on('click',function() {
+					  
+					html = $(this).attr('name');
+					if (html=="quregelung.html") {
+						window.location.replace("{{ url_for( 'index' , html='quregelung.html' ) }}");
+					}
+					if (html=="puregelung.html") {
+						window.location.replace("{{ url_for( 'index' , html='puregelung.html' ) }}");
+					}
+					if (html=="quouregelung.html") {
+						window.location.replace("{{ url_for( 'index' , html='quouregelung.html' ) }}");
+					}
+					if (html=="maxpregelung.html") {
+						window.location.replace("{{ url_for( 'index' , html='maxpregelung.html' ) }}");
+					}
+			});
+                
+       function totalReload(amount) {
+		var checklist = [];
+		var i;
+		var inputvaluesV = []
+		var inputvaluesQuo = []
+		for (i = 1; i < amount+1; i++) {
+			var searchtextV = 'input[name="V' + i + '"]';
+			var searchtextQuo = 'input[name="Quo' + i + '"]';
+			inputvaluesV.push($(searchtextV).val());
+			inputvaluesQuo.push($(searchtextQuo).val());
+		} 
+		checklist[0] = checking("qu");
+		checklist[1] = checking("pu");
+		checklist[2] = checking("maxp");
+		var valueObject = { 
+                        valuesV : inputvaluesV,
+                        valuesQuo : inputvaluesQuo,
+                        checklist : checklist,
+                }
+		
+      $.post('control', JSON.stringify(valueObject), function(response) {
+        window.location.replace("{{ url_for( 'index' , html='quouregelung.html' ) }}");
+      });
+      
+      return false;
+		
+		}
+                
+        function deleteEntry(target) {
+		
+		var i;
+		var inputvaluesV = []
+		var inputvaluesQuo = []
+		for (i = 1; i < amount+1; i++) {
+			var searchtextV = 'input[name="V' + i + '"]';
+			var searchtextQuo = 'input[name="Quo' + i + '"]';
+			inputvaluesV.push($(searchtextV).val());
+			inputvaluesQuo.push($(searchtextQuo).val());
+		} 
+		var valueObject = { 
+                        valuesV : inputvaluesV,
+                        valuesQuo : inputvaluesQuo,
+                        target : target,
+                }
+		
+      $.post('deleteEntry', JSON.stringify(valueObject), function(data) {
+        var newPlotData = [];
+        var arrayLength = data.newvalues.valuesV.length;
+        for (var i = 0; i < arrayLength-1; i++) {
+			newPlotData.push([data.newvalues.valuesV[i], data.newvalues.valuesQuo[i]]);
+		}
+		$.plot("#QUGraph", [{
+				data: newPlotData,
+				lines: { show: true },
+				points: { show: true }
+			},]);
+        
+      });
+      location.reload();
+      
+      return false;
+		
+		}
+                
+        
+		
+
+
+		
+		
+	
+	</script>

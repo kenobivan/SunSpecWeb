@@ -1,0 +1,184 @@
+<script>
+	
+	
+	
+	loadGraph();
+			var amount = 0;
+					{% for dict_item in values['valuesvvar'] %}
+							amount += 1;
+			{% endfor %}
+				
+	function loadGraph() {
+					var d1 = [];
+				{% for value in values['valuesvvar'] %}
+					d1.push([{{ value[0] }}, {{ value[1] }}]);
+				{% endfor %}
+				
+				
+				$.plot("#QUGraph", [{
+					data: d1,
+					lines: { show: true },
+					points: { show: true }
+				},]);
+			}
+					
+			
+				
+			
+				$('#submitQU').bind('click', function() {
+					
+					totalReload(amount);
+				});
+			
+					  
+			
+			
+			$("body").on("keyup", "#extraRow", function(event){
+				if(event.keyCode==13){
+					var j;
+					var Vlist = []
+					var VArlist = []
+					for (i = 1; i < amount+1; i++) {
+						var searchV = 'input[name="V' + i + '"]';
+						var searchVAr = 'input[name="VAr' + i + '"]';
+						if ($(searchV).val() < 0) {
+							alert("Fehler: Bitte überprüfe die eingegebenen SPANNUNGswerte");
+							return false;
+						}
+						Vlist.push($(searchV).val());
+						VArlist.push($(searchVAr).val());
+					}
+					$('#newModal').html('<h4>Neu:</h4>');
+					for (k= 0; k < Vlist.length; k++){
+						$('#newModal').append('<p>V' + (k+1) + ': ' + Vlist[k] + ' (in %) - VAr' + (k+1) + ': ' + VArlist[k] + '</p>');
+					}
+					$('#Modal').modal('show');
+					
+				}
+			});
+			
+			
+			
+			$(".plus").click(function(){
+				amount += 1;
+				$("#extraRow").append("<div class='form-row'><div class='col-sm-'><p>Spannung (in %):</p><input type='text' class='form-control' name='V" + amount + "' style='width:30%;'></div><div class='col-sm-'><p>Blindleistung (in VAr):</p><input type='text' class='form-control' name='VAr" + amount + "' style='width:30%;'></div></div>");
+				
+			});
+			
+			$('#modalButton').on('click', function(){
+				var j;
+				var Vlist = []
+				var VArlist = []
+				for (i = 1; i < amount+1; i++) {
+					var searchV = 'input[name="V' + i + '"]';
+					var searchVAr = 'input[name="VAr' + i + '"]';
+					if ($(searchV).val() < 0) {
+						alert("Fehler: Bitte überprüfe die eingegebenen SPANNUNGswerte");
+						return false;
+					}
+					Vlist.push($(searchV).val());
+					VArlist.push($(searchVAr).val());
+				}
+				
+				for (k= 0; k < Vlist.length; k++){
+					$('#newModal').append('<p>V' + (k+1) + ': ' + Vlist[k] + ' (in %) - VAr' + (k+1) + ': ' + VArlist[k] + '</p>');
+				}
+			});
+			
+			
+			$(".quregelung").on("click", ".minus", function(){
+				
+				deleteEntry(event.target.id - 1);
+				location.reload();
+			});
+					
+			
+			
+			$('.nav-item').on('click',function() {
+					  
+					html = $(this).attr('name');
+					if (html=="quregelung.html") {
+						window.location.replace("{{ url_for( 'index' , html='quregelung.html' ) }}");
+					}
+					if (html=="puregelung.html") {
+						window.location.replace("{{ url_for( 'index' , html='puregelung.html' ) }}");
+					}
+					if (html=="quouregelung.html") {
+						window.location.replace("{{ url_for( 'index' , html='quouregelung.html' ) }}");
+					}
+					if (html=="maxpregelung.html") {
+						window.location.replace("{{ url_for( 'index' , html='maxpregelung.html' ) }}");
+					}
+			});
+			
+					
+			function totalReload(amount) {
+			var checklist = [];
+			var i;
+			var inputvaluesV = []
+			var inputvaluesVAr = []
+			for (i = 1; i < amount+1; i++) {
+				var searchtextV = 'input[name="V' + i + '"]';
+				var searchtextVAr = 'input[name="VAr' + i + '"]';
+				if ($(searchtextV).val() < 0) {
+					alert("Fehler: Bitte überprüfe die eingegebenen SPANNUNGswerte");
+					return false;
+				}
+				inputvaluesV.push($(searchtextV).val());
+				inputvaluesVAr.push($(searchtextVAr).val());
+			} 
+			checklist[0] = checking("qu");
+			checklist[1] = checking("pu");
+			checklist[2] = checking("maxp");
+			var valueObject = { 
+							valuesV : inputvaluesV,
+							valuesVAr : inputvaluesVAr,
+							checklist : checklist,
+					}
+			
+		  $.post('control', JSON.stringify(valueObject), function(response) {
+			
+			window.location.replace("{{ url_for( 'index' , html='quregelung.html' ) }}");
+		  });
+		  
+		  return false;
+			
+			}
+					
+			function deleteEntry(target) {
+			
+			var i;
+			var inputvaluesV = []
+			var inputvaluesVAr = []
+			for (i = 1; i < amount+1; i++) {
+				var searchtextV = 'input[name="V' + i + '"]';
+				var searchtextVAr = 'input[name="VAr' + i + '"]';
+				inputvaluesV.push($(searchtextV).val());
+				inputvaluesVAr.push($(searchtextVAr).val());
+			} 
+			var valueObject = { 
+							valuesV : inputvaluesV,
+							valuesVAr : inputvaluesVAr,
+							target : target,
+					}
+			
+		  $.post('deleteEntry', JSON.stringify(valueObject), function(data) {
+			var newPlotData = [];
+			var arrayLength = data.newvalues.valuesV.length;
+			for (var i = 0; i < arrayLength; i++) {
+				newPlotData.push([data.newvalues.valuesV[i], data.newvalues.valuesVAr[i]]);
+			}
+			$.plot("#QUGraph", [{
+					data: newPlotData,
+					lines: { show: true },
+					points: { show: true }
+				},]);
+			
+		  });
+		  $(".reload").load(location.href + " .reload>*", "");
+		  $(".reload2").load(location.href + " .reload2>*", "");
+		  
+		  return false;
+			
+			}
+</script>

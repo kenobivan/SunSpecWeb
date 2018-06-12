@@ -1,0 +1,17 @@
+### PySerial Installieren
+
+### Python 3.6 Konsole öffnen
+
+# In den Ordner pysunspec-feature-py2-3 wechseln (cd ???/pysunspec-feature-py2-3)
+# python setup.py install 
+# Installation testen: python -m unittest discover -v sunspec
+
+### Wechselrichter Simulieren (zu Testzwecken):
+
+# In den Ordner modsim wechseln (cd ???/modsim)
+# python modsim.py -m tcp mbmap_test_device.xml
+
+--> es sollte die IP (addr), der Port (port) und die ID (slave id) des simulierten WR angezeigt werden
+
+### PySunspec ausführen:
+python suns3.py -i <-IP des WR-> -a <-ID des WR (slave id)->

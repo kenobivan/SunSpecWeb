@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+	<script>window.jQuery || document.write('<script src="{{url_for('static', filename='jquery/jquery-3.3.1.js') }}">\x3C/script>')</script>
+	<script src="{{ url_for('static', filename='flot/jquery.flot.js') }}" type="text/javascript"></script>
+	<link rel="stylesheet" href="{{ url_for('static', filename='bootstrap/css/bootstrap.css') }}">
+	<link rel="stylesheet" href="{{ url_for('static', filename='bootstrap/bootstrap-3.3.7/dist/css/bootstrap.css') }}">
+	<script src="{{ url_for('static', filename='bootstrap/bootstrap-3.3.7/dist/js/bootstrap.min.js') }}"></script>
+	<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+  
+    <title>Steuereinheit</title>
+    
+    <style>
+				@import url('https://fonts.googleapis.com/css?family=Roboto+Condensed:700&subset=cyrillic');
+		input[type=checkbox]{
+		  display:none;  
+		}
+		.block{
+		  width:200px;
+		  margin:0 0 25px;
+		  float:left;
+		}
+		span{
+		  text-transform:uppercase;
+		  font-family:'Roboto Condensed', sans-serif;
+		  font-weight:bold;
+		  letter-spacing:1px;
+		  font-size:15px;
+		  width:85px;
+		  margin:10px 0 0 4px;
+		}
+		.wrap{
+		  width:200px;
+		  position: absolute;
+		  left:90%;
+		  top:-1%;
+		  padding:30px 30px 5px;
+		  z-index:100;
+		}
+		label{
+		  width:50px;
+		  height:25px;
+		  box-sizing:border-box;
+		  border:3px solid;
+		  float:left;
+		  border-radius:100px;
+		  position:relative;
+		  cursor:pointer;
+		  transition:.3s ease;
+		}
+		input[type=checkbox]:checked + label{
+		  background:#55e868;
+		}
+		input[type=checkbox]:checked + label:before{
+		  left:25px;
+		}
+		label:before{
+		  transition:.3s ease;
+		  content:'';
+		  width:20px;
+		  height:20px;
+		  position:absolute;
+		  background:white;
+		  left:0px;
+		  top:0px;
+		  box-sizing:border-box;
+		  border:1.5px solid;
+		  color:black;
+		  border-radius:100px;
+		}
+		.nav-item {
+			margin-right:20px;
+		}
+    </style>
+    
+    
+</head>
+
+<body>
+	<button id="reloadButton">Reload</button><center><h1 id="title">Steuereinheit</h1></center>
+	
+	{% include "status.html" %}
+	{% include "switch.html" %}
+	{% block quregelung %}{% endblock %}
+</body>
+<script type=text/javascript>
+	  $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+	  
+	  $("#reloadButton").on("click", function() {
+		  location.reload();
+		 });
+	  
+</script>
+</html>

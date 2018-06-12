@@ -1,0 +1,42 @@
+
+	<div id="container" class="container1" style="width:48%;margin-left:10px;margin-top:25px; margin-bottom:15px; background-color:#DBDBDB; border-radius: 25px; padding:20px; padding-bottom:50px;float:left;">
+		<div class="blink" style="
+      width: 10px;
+      height: 10px;
+      margin-top:7px;
+      margin-right:7px;
+      -webkit-border-radius: 25px;
+      -moz-border-radius: 25px;
+      border-radius: 25px;
+      background-color: red;
+      float:left;"></div><p style="color:red;">LIVE</p>
+		<table class="table table-striped">
+		  <thead>
+			<tr>
+			  <th scope="col">Label</th>
+			  <th scope="col">Value</th>
+			  <th scope="col">Unit</th>
+			</tr>
+		  </thead>
+		  <tbody>
+			{% for value in status %}
+			<tr>
+			  <th scope="row">{{ value[0] }}</th>
+			  <td>{{ value[1] }}</td>
+			  <td>{{ value[2] }}</td>
+			</tr>
+			{% endfor %}
+		  </tbody>
+		</table>
+	</div>
+	
+	<script>
+		
+		
+		window.setInterval(function(){
+		  $(".table").load(location.href + " .table>*", "");
+		  
+
+		  
+		}, 2000);
+	</script>
