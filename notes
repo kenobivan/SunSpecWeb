@@ -1,0 +1,16 @@
+Liste aller Models:
+  "Common (1)", 
+  "Inverter (Single Phase) (101)", 
+  "Nameplate (120)", 
+  "Basic Settings (121)", 
+  "Measurements_Status (122)", 
+  "Immediate Controls (123)", 
+  "Static Volt-VAR (126)", 
+  "Watt-PF (131)", 
+  "Volt-Watt (132)"
+
+git-befehle:
+
+git add .
+git commit -m "text"
+git push

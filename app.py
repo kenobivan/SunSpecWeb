@@ -17,10 +17,6 @@ transtype = 'tcp'
 
 app = Flask(__name__)
 
-from modules.util import ListConverter
-
-app.url_map.converters['list'] = ListConverter
-
 try:
 	sd = client.SunSpecClientDevice(client.TCP, slaveid, ipaddr=ipaddr, ipport=ipport, timeout=timeout)
 
@@ -120,28 +116,8 @@ def control():
 			html = "quregelung.html"
 	#code fuer regelungsaktivierung
 	if 'checklist' in values:
-		#schreibt ActCrv in Q(U)
-		if values["checklist"][0] == "true":
-			sd.device.models_list[6].blocks[0].points["ActCrv"].value_setter(1)
-		else:
-			sd.device.models_list[6].blocks[0].points["ActCrv"].value_setter(0)
-		sd.volt_var.write()
-		#schreibt ActCrv in P(U)
-		if values["checklist"][1] == "true":
-			sd.device.models_list[8].blocks[0].points["ActCrv"].value_setter(1)
-		else:
-			sd.device.models_list[8].blocks[0].points["ActCrv"].value_setter(0)
-		sd.volt_watt.write()
-		#setzt maxp auf 100%
-		if values["checklist"][2] == "true":
-			maxPFile = open('maxP.txt', 'r')
-			for line in maxPFile:
-				actMaxP = line
-		else:
-			actMaxP = 100
-		sd.device.models_list[5].points['WMaxLimPct'].value_setter(actMaxP)
-		sd.device.models_list[5].write_points()	
-	
+		set_control(values["checkname"], values["checklist"])
+		return "switched"
 	return index(html)
 	
 @app.route('/deleteEntry', methods = ['POST'])
@@ -201,7 +177,75 @@ def deleteEntry():
 		sd.volt_var.write()
 	return jsonify(newvalues = values)
 	
-@app.route('/getstatus')
+@app.route('/post', methods=['GET', 'POST'])
+def post():
+	print(sd.device.models_list)
+	keys = request.form.get('keys')
+	post_models = request.form.get('models')
+	alldict={}
+	allmodels={}
+	status={}
+	if "all" in keys or post_models:
+		print("we are in if-statement")
+		for model in sd.device.models_list:
+			if model.model_type.label:
+				label = '%s (%s)' % (model.model_type.label, str(model.id))
+			else:
+				label = '(%s)' % (str(model.id))
+			alldict.update({label: {}})
+			if label in post_models:
+				allmodels.update({label: {}})
+			for block in model.blocks:
+				if block.index > 0:
+				  index = '%02d:' % (block.index)
+				else:
+				  index = '   '
+				for point in block.points_list:
+					if point.value is not None:
+						if point.point_type.label:
+							label2 = '%s%s(%s)' % (index, point.point_type.label, point.point_type.id)
+						else:
+							label2 = '%s(%s)' % (index, point.point_type.id)
+						units = point.point_type.units
+						if units is None:
+							units = ''
+						if point.point_type.type == suns.SUNS_TYPE_BITFIELD16:
+							value = '0x%04x' % (point.value)
+						elif point.point_type.type == suns.SUNS_TYPE_BITFIELD32:
+							value = '0x%08x' % (point.value)
+						else:
+							value = str(point.value).rstrip('\0')
+						alldict[label].update({label2:{"point_id": point.point_type.id, "value":value, "unit":str(units)}})
+						if label in post_models:
+							allmodels[label].update({label2:{"point_id": point.point_type.id, "value":value, "unit":str(units)}})
+	if "live" in keys:
+		status.update({'livedata': get_status()})
+	if 'controlvwatt' in keys:
+		status.update({'controlvwatt':func.V_W_getter(sd)})
+	if 'controlvvar' in keys:
+		status.update({'controlvvar':func.V_VAr_getter(sd)})
+	if 'controlvfactor' in keys:
+		status.update({'controlvfactor':func.V_quo_getter(sd)})
+	if 'controlmaxp' in keys:
+		maxPFile = open('maxP.txt', 'r')
+		for line in maxPFile:
+			status.update({'controlmaxp':line})
+	if 'basic_settings' in keys:
+		status.update({'basic_settings':func.basic_settings_getter(sd)})
+	if "all" in keys:
+		status.update({'livedata': get_status()})
+		status.update(alldict)
+		status.update({'controlvwatt':func.V_W_getter(sd)})
+		status.update({'controlvvar':func.V_VAr_getter(sd)})
+		status.update({'controlvfactor':func.V_quo_getter(sd)})
+		maxPFile = open('maxP.txt', 'r')
+		for line in maxPFile:
+			status.update({'controlmaxp':line})
+	if post_models:
+		status.update(allmodels)
+	return jsonify(status)
+    
+@app.route('/getstatus', methods=['GET', 'POST'])
 def getstatus():
 	status = {'livedata': get_status()}
 	status.update({'controlvwatt':func.V_W_getter(sd)})
@@ -213,14 +257,14 @@ def getstatus():
 	status.update({'basic_settings':func.basic_settings_getter(sd)})
 	return jsonify(status)
 
-@app.route('/writestatus/<list:controls>')
-def writestatus(controls):
+@app.route('/writestatus', methods = ['POST', 'GET'])
+def writestatus():
+	controls = request.json
 	newcontrols = {}
 	#verbindet alle Eingabedicts zu einem
 	for control in controls:
-		#text zu dict
-		json_control = control.replace("'", "\"")
-		newcontrols.update(json.loads(json_control))
+		newcontrols.update(control)
+		print("newcontrols: " + str(newcontrols))
 	for key in newcontrols:
 		if key == "controlvvar":
 			valuesvvar = {'valuesV':[],'valuesVAr':[]}
@@ -235,6 +279,7 @@ def writestatus(controls):
 			#schreibt Werte
 			func.V_VAr_setter(sd, valuesvvar)
 		if key == "controlvfactor":
+			print("controlvfactor")
 			valuesvvar = {'valuesV':[],'valuesQuo':[]}
 			for value in newcontrols[key]:
 				if value[0] > 0:
@@ -250,6 +295,7 @@ def writestatus(controls):
 			#schreibt Werte
 			func.V_Quo_setter(sd, valuesvvar)
 		if key == "controlvwatt":
+			print("vwatt")
 			valuesvvar = {'valuesV':[],'valuesW':[]}
 			for value in newcontrols[key]:
 				if value[0] > 0:
@@ -271,7 +317,12 @@ def writestatus(controls):
 			maxPFile = open('maxP.txt', 'w')
 			maxPFile.write(newcontrols[key])
 			maxPFile.close()
-	return "newcontrols"
+		if key == "activate":
+			print("activate")
+			for control in newcontrols["activate"]:
+				print("name"+str(control[0])+str(control[1]))
+				set_control(control[0],control[1])
+	return "successfully changed controlsettings"
 	
 	
 def get_status():
@@ -306,6 +357,36 @@ def get_control():
 	else:
 		actCntrl.append("false")
 	return actCntrl	
+	
+def set_control(name, value):
+	sd.read()
+	if name == "qu":
+		#schreibt ActCrv in Q(U)
+		if value == "true":
+			sd.device.models_list[6].blocks[0].points["ActCrv"].value_setter(1)
+		else:
+			sd.device.models_list[6].blocks[0].points["ActCrv"].value_setter(0)
+		sd.volt_var.write()
+	elif name == "pu":
+		#schreibt ActCrv in P(U)
+		if value == "true":
+			sd.device.models_list[8].blocks[0].points["ActCrv"].value_setter(1)
+		else:
+			sd.device.models_list[8].blocks[0].points["ActCrv"].value_setter(0)
+		sd.volt_watt.write()
+	elif name == "maxp":
+		#setzt maxp auf 100%
+		if value == "true":
+			maxPFile = open('maxP.txt', 'r')
+			for line in maxPFile:
+				actMaxP = line
+		else:
+			actMaxP = 100
+		sd.device.models_list[5].points['WMaxLimPct'].value_setter(actMaxP)
+		sd.device.models_list[5].write_points()
+	else:
+		return "wrong control name"
+	return "switched"
 
 
     

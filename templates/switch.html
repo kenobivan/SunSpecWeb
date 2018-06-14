@@ -1,18 +1,18 @@
-	<div id="reload">
+	<div id="reload5">
 		<div class="wrap">
 		  <div class="container" style="float:left;">
 			<span>Q(U)</span>
-			<input data-index="0" id="qu" type="checkbox" />
+			<input data-index="0" class="checkbox" id="qu" type="checkbox" />
 			<label for="qu"></label>
 		  </div>
 		  <div class="container" style="float:left;">
 			<span>P(U)</span>
-			<input data-index="1" id="pu" type="checkbox" />
+			<input data-index="1" class="checkbox" id="pu" type="checkbox" />
 			<label for="pu"></label>
 		  </div>
 		  <div class="container">
 			<span>max.P</span>
-			<input data-index="2" id="maxp" type="checkbox" />
+			<input data-index="2" class="checkbox" id="maxp" type="checkbox" />
 			<label for="maxp"></label>
 		  </div>
 		</div>
@@ -22,7 +22,12 @@
 	
 	
 	
+	
 	<script>
+		$(".checkbox").change(function() {
+			id = $(this).attr("id");
+			postSwitch(id);
+		});
 		
 		var checklist = [];
 		
@@ -61,6 +66,23 @@
 			};
 			return check;
 		}
+		
+		function postSwitch(name) {
+			checklist = checking(name);
+			var valueObject = {
+							checklist : checklist,
+							checkname : name,
+					}
+			
+		  $.post('control', JSON.stringify(valueObject), function(response) {
+			
+			location.reload();
+		  });
+		  
+		  return false;
+			
+			}
+		
 		
 			
 		

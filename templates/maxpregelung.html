@@ -47,14 +47,9 @@
 		}, 1000);
 	
       function submitMaxP(maxPvalue) {
-                var checklist = [];
-                checklist[0] = checking("qu");
-				checklist[1] = checking("pu");
-				checklist[2] = checking("maxp");
                 var valueObject = {
                         
                         maxPvalue : maxPvalue,
-                        checklist: checklist,
                 }
                 $.post('control', JSON.stringify(valueObject), function(response){
                         window.location.replace("{{ url_for( 'index' , html='maxpregelung.html' ) }}");

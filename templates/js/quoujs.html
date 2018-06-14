@@ -127,7 +127,6 @@
 			});
                 
        function totalReload(amount) {
-		var checklist = [];
 		var i;
 		var inputvaluesV = []
 		var inputvaluesQuo = []
@@ -137,13 +136,9 @@
 			inputvaluesV.push($(searchtextV).val());
 			inputvaluesQuo.push($(searchtextQuo).val());
 		} 
-		checklist[0] = checking("qu");
-		checklist[1] = checking("pu");
-		checklist[2] = checking("maxp");
 		var valueObject = { 
                         valuesV : inputvaluesV,
                         valuesQuo : inputvaluesQuo,
-                        checklist : checklist,
                 }
 		
       $.post('control', JSON.stringify(valueObject), function(response) {
