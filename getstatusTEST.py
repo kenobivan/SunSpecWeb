@@ -1,5 +1,13 @@
-import urllib.request, json
-#link anpassen
-with urllib.request.urlopen("http://localhost:5000/getstatus") as url:
-    data = json.loads(url.read().decode())
-    print(data)
+#!/usr/bin/env python
+from contextlib import closing
+try:
+    from urllib.parse import urlencode
+    from urllib.request import urlopen
+except ImportError: # Python 2
+    from urllib import urlencode
+    from urllib2 import urlopen
+
+url = 'http://localhost:5000/getstatus'
+data = urlencode({"keys" : [], "models":["Static Volt-VAR (126)"]}).encode()
+with closing(urlopen(url, data)) as response:
+    print(response.read().decode())
