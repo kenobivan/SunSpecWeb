@@ -177,7 +177,7 @@ def deleteEntry():
 		sd.volt_var.write()
 	return jsonify(newvalues = values)
 	
-@app.route('/post', methods=['GET', 'POST'])
+@app.route('/getstatus', methods=['GET', 'POST'])
 def post():
 	print(sd.device.models_list)
 	keys = request.form.get('keys')
@@ -243,18 +243,6 @@ def post():
 			status.update({'controlmaxp':line})
 	if post_models:
 		status.update(allmodels)
-	return jsonify(status)
-    
-@app.route('/getstatus', methods=['GET', 'POST'])
-def getstatus():
-	status = {'livedata': get_status()}
-	status.update({'controlvwatt':func.V_W_getter(sd)})
-	status.update({'controlvvar':func.V_VAr_getter(sd)})
-	status.update({'controlvfactor':func.V_quo_getter(sd)})
-	maxPFile = open('maxP.txt', 'r')
-	for line in maxPFile:
-		status.update({'controlmaxp':line})
-	status.update({'basic_settings':func.basic_settings_getter(sd)})
 	return jsonify(status)
 
 @app.route('/writestatus', methods = ['POST', 'GET'])

@@ -8,6 +8,6 @@ except ImportError: # Python 2
     from urllib2 import urlopen
 
 url = 'http://localhost:5000/getstatus'
-data = urlencode({"keys" : [], "models":["Static Volt-VAR (126)"]}).encode()
+data = urlencode({"keys" : ["live"], "models":[]}).encode()
 with closing(urlopen(url, data)) as response:
     print(response.read().decode())
