@@ -91,15 +91,13 @@ if __name__ == "__main__":
 
 		# read all models in the device
 		sd.read()
-		
-		print(sd.device.models_list[6].blocks[1].points)
 
-		for model in sd.device.models_list:
+		for num, model in enumerate(sd.device.models_list):
 			if model.model_type.label:
 				label = '%s (%s)' % (model.model_type.label, str(model.id))
 			else:
 				label = '(%s)' % (str(model.id))
-			print('\nmodel: %s\n' % (label))
+			print('\nmodel: %s %i\n' % (label, num))
 			for block in model.blocks:
 				if block.index > 0:
 				  index = '%02d:' % (block.index)
@@ -121,5 +119,3 @@ if __name__ == "__main__":
 						else:
 							value = str(point.value).rstrip('\0')
 						print('%-40s %20s %-10s' % (label, value, str(units)))
-						
-						#[{% for value in values %}[{{ value[0] }}, {{ value[1] }}],{% endfor %}] ]

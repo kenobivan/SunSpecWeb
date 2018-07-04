@@ -14,3 +14,6 @@ git-befehle:
 git add .
 git commit -m "text"
 git push
+
+
+* * * * * /usr/bin/python3 /home/pi/webapp/autoSendData.py

@@ -62,7 +62,8 @@ def data_to_ipv6addr(data):
     return addr[0]
 
 def data_to_eui48(data):
-    return '%02X:%02X:%02X:%02X:%02X:%02X' % (ord(data[2]), ord(data[3]), ord(data[4]), ord(data[5]), ord(data[6]), ord(data[7]))
+	data=data.decode('utf-8','backslashreplace')
+	return '%02X:%02X:%02X:%02X:%02X:%02X' % (ord(data[2]), ord(data[3]), ord(data[4]), ord(data[5]), ord(data[6]), ord(data[7]))
 
 try:
     float('nan')
