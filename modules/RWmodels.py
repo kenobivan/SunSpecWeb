@@ -1,19 +1,55 @@
 import json
+import time
+import sunspec.core.client as client
+import sunspec.core.suns as suns
+from optparse import OptionParser
+import os
 
+def readInverter():
+	slaveid = 1#126
+	ipaddr = '127.0.0.1'#'192.168.0.111'
+	ipport = 502
+	timeout = 2.0
+	transtype = 'tcp'
+	try:
+		sd = client.SunSpecClientDevice(client.TCP, slaveid, ipaddr=ipaddr, ipport=ipport, timeout=timeout)
 
+	except client.SunSpecClientError as e:
+		print('Error: %s'%(e))
+		sys.exit(1)
+
+	if sd is not None:
+		print('\nTimestamp: %s' % (time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())))
+	sd.read()
+	return (sd)
 	
-with open("logs/modeldict.txt", mode='r') as jsonfile:
-	modeldict = json.load(jsonfile)
-mdlnmbQU = modeldict['126']
-mdlnmbBS = modeldict['121']
-mdlnmbPU = modeldict['132']
+def getModelDict(sd):
+	modeldict = {}
+	for num, model in enumerate(sd.device.models_list):
+				if model.model_type.label:
+					label = '%s (%s)' % (model.model_type.label, str(model.id))
+				else:
+					label = '(%s)' % (str(model.id))
+				modeldict.update({model.id:num})
+	with open("/home/pi/myserver/logs/modeldict.txt", mode='w') as jsonfile:
+			json.dump(modeldict, jsonfile)
+			
+	with open("/home/pi/myserver/logs/modeldict.txt", mode='r') as jsonfile:
+			modeldict = json.load(jsonfile)
+	#auf die bestimmten models zugreifen
+	#mdlnmbQU = modeldict['126']
+	#mdlnmbBS = modeldict['121']
+	#mdlnmbINV = 1#modeldict['103']
+	#mdlnmbPU = modeldict['132']
+	#mdlnmbNAME = modeldict['120']
+	return(modeldict)
 	
-def V_VAr_getter(sd):
+def V_VAr_getter(sd, modeldict):
 	#zeigt nur die eingestellten Werte an
 	values = []
 	ActPt = 0
-
-	sd.read()
+	mdlnmbQU = modeldict['126']
+	mdlnmbBS = modeldict['121']
 	ActPt = sd.device.models_list[mdlnmbQU].blocks[1].points["ActPt"].value_getter()
 			
 
@@ -33,11 +69,11 @@ def V_VAr_getter(sd):
 
 	return(values)
 	
-def V_VAr_setter(sd, values):
-	sd.read()
+def V_VAr_setter(sd, values, modeldict):
+	mdlnmbQU = modeldict['126']
+	mdlnmbBS = modeldict['121']
 	#schreibt V-Wert
 	for index, v in enumerate(values["valuesV"]):
-		print(v)
 		strV = "V" + str(index+1)
 		sd.volt_var.curve[1][strV] = v
 	#schreibt VAr-Werte
@@ -51,10 +87,11 @@ def V_VAr_setter(sd, values):
 	sd.volt_var.write()
 	return(values)
 	
-def V_W_getter(sd):
+def V_W_getter(sd, modeldict):
 	#zeigt nur die eingestellten Werte an
 	values = []
 	ActPt = 0
+	mdlnmbPU = modeldict['132']
 	
 	ActPt = sd.device.models_list[mdlnmbPU].blocks[1].points["ActPt"].value_getter()
 			
@@ -74,7 +111,8 @@ def V_W_getter(sd):
 
 	return(values)
 	
-def V_W_setter(sd, values):
+def V_W_setter(sd, values, modeldict):
+	mdlnmbPU = modeldict['132']
 	#schreibt V-Werte
 	for index, v in enumerate(values["valuesV"]):
 		strV = "V" + str(index+1)
@@ -92,12 +130,12 @@ def V_W_setter(sd, values):
 	sd.volt_watt.write()
 	return(values)
 	
-def V_quo_getter(sd):
+def V_quo_getter(sd, modeldict):
 	#zeigt nur die eingestellten Werte an
 	values = []
 	ActPt = 0
-
-	sd.read()
+	mdlnmbQU = modeldict['126']
+	mdlnmbBS = modeldict['121']
 	ActPt = sd.device.models_list[mdlnmbQU].blocks[1].points['ActPt'].value_getter()
 			
 
@@ -117,8 +155,9 @@ def V_quo_getter(sd):
 
 	return(values)
 	
-def V_Quo_setter(sd, values):
-	sd.read()
+def V_Quo_setter(sd, values, modeldict):
+	mdlnmbQU = modeldict['126']
+	mdlnmbBS = modeldict['121']
 	#schreibt V-Wert
 	for index, v in enumerate(values["valuesV"]):
 		strV = "V" + str(index+1)
@@ -134,8 +173,9 @@ def V_Quo_setter(sd, values):
 	sd.volt_var.write()
 	return(values)
 	
-def basic_settings_getter(sd):
+def basic_settings_getter(sd, modeldict):
 	sd.read()
+	mdlnmbBS = modeldict['121']
 	values = []
 	for point in sd.device.models_list[mdlnmbBS].blocks[0].points_list:
 		if point.value is not None:

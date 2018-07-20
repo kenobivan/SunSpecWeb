@@ -66,20 +66,10 @@
 					}
 			
 		  $.post('deleteEntry', JSON.stringify(valueObject), function(data) {
-			var newPlotData = [];
-			var arrayLength = data.newvalues.valuesV.length;
-			for (var i = 0; i < arrayLength-1; i++) {
-				newPlotData.push([data.newvalues.valuesV[i], data.newvalues.valuesW[i]]);
-			}
-			$.plot("#QUGraph", [{
-					data: newPlotData,
-					lines: { show: true },
-					points: { show: true }
-				},]);
+			
+			window.location.replace("{{ url_for( 'index' , html='puregelung.html' ) }}");
 			
 		  });
-		  
-		  location.reload();
 		  
 		  return false;
 			
@@ -153,9 +143,8 @@
 			
 			
 			$(".quregelung").on("click", ".minus", function(){
-				
-				deleteEntryPU(event.target.id - 1);
-				amount -= 1;
+				var id = $(this).attr('id');
+				deleteEntryPU(id - 1);
 			});
 					
 			$('.nav-item').on('click',function() {

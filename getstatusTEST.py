@@ -8,6 +8,7 @@ except ImportError: # Python 2
     from urllib2 import urlopen
 
 url = 'http://localhost:5000/getstatus'
-data = urlencode({"keys" : ["basic_settings"], "models":[]}).encode()
+data = urlencode({"keys" : ["all"], "models":[]}).encode()
+print(type(data))
 with closing(urlopen(url, data)) as response:
     print(response.read().decode())

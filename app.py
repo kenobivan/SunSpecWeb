@@ -5,50 +5,20 @@ import sys
 import time
 import sunspec.core.client as client
 import sunspec.core.suns as suns
+import ast
 from optparse import OptionParser
 
 import modules.RWmodels as func
 
-slaveid = 1#126
-ipaddr = '127.0.0.1'#'192.168.0.111'
-ipport = 502
-timeout = 2.0
-transtype = 'tcp'
-
 app = Flask(__name__)
 
-try:
-	sd = client.SunSpecClientDevice(client.TCP, slaveid, ipaddr=ipaddr, ipport=ipport, timeout=timeout)
-
-except client.SunSpecClientError as e:
-	print('Error: %s'%(e))
-	sys.exit(1)
-
-if sd is not None:
-	print('\nTimestamp: %s' % (time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())))
-
-sd.read()
-modeldict = {}
-for num, model in enumerate(sd.device.models_list):
-			if model.model_type.label:
-				label = '%s (%s)' % (model.model_type.label, str(model.id))
-			else:
-				label = '(%s)' % (str(model.id))
-			modeldict.update({model.id:num})
-with open("logs/modeldict.txt", mode='w') as jsonfile:
-		json.dump(modeldict, jsonfile)
-		
-with open("logs/modeldict.txt", mode='r') as jsonfile:
-		modeldict = json.load(jsonfile)
-mdlnmbQU = modeldict['126']
-mdlnmbBS = modeldict['121']
-mdlnmbINV = 1#modeldict['103']
-mdlnmbPU = modeldict['132']
-mdlnmbNAME = modeldict['120']
 @app.route('/<html>')
 @app.route('/')
 def index(html="quregelung.html"):
-	sd.read()
+	sd = func.readInverter()
+	modeldict = func.getModelDict(sd)
+	mdlnmbBS = modeldict['121']
+	mdlnmbNAME = modeldict['120']
 	if html == "maxpregelung.html":
 		maxPFile = open('logs/maxP.txt', 'r')
 		for line in maxPFile:
@@ -57,22 +27,24 @@ def index(html="quregelung.html"):
 		result=float(sd.device.models_list[mdlnmbNAME].points['WRtg'].value_getter())*float(values['valueMaxP'])*0.01
 		values.update({'result': result})
 	elif html == "puregelung.html":
-		values = {'valuesvwatt':func.V_W_getter(sd)}
+		values = {'valuesvwatt':func.V_W_getter(sd, modeldict)}
 		values.update({'wmax': sd.device.models_list[mdlnmbBS].points['WMax'].value_getter(), 'vref': sd.device.models_list[mdlnmbBS].points['VRef'].value_getter()})
 	elif html == "quouregelung.html":
-		values = {'valuesquo':func.V_quo_getter(sd)}
+		values = {'valuesquo':func.V_quo_getter(sd, modeldict)}
 		values.update({'wmax': sd.device.models_list[mdlnmbBS].points['WMax'].value_getter(), 'vref': sd.device.models_list[mdlnmbBS].points['VRef'].value_getter()})
 	else:
-		values = {'valuesvvar':func.V_VAr_getter(sd)}
+		values = {'valuesvvar':func.V_VAr_getter(sd, modeldict)}
 		values.update({'vref': sd.device.models_list[mdlnmbBS].points['VRef'].value_getter()})
-	status = get_status()
-	actCntrl = get_control()
+	status = get_status(sd, modeldict)
+	actCntrl = get_control(sd, modeldict)
+	sd.close()
 	return render_template(html, values = values, status = status, actCntrl = json.dumps(actCntrl))
 	
 @app.route('/control', methods = ['POST'])
 def control():
+	sd = func.readInverter()
+	modeldict = func.getModelDict(sd)
 	values = request.get_json(force=True)
-	currentValues = func.V_VAr_getter(sd)
 	#Code fuer QU-Regelung
 	if 'valuesV' in values and 'valuesVAr' in values:
 		#wandelt alle Werte in int
@@ -83,10 +55,12 @@ def control():
 		#sortiert nach Spannung
 		values["valuesV"], values["valuesVAr"] = (list(t) for t in zip(*sorted(zip(values["valuesV"], values["valuesVAr"]))))
 		#schreibt werte
-		func.V_VAr_setter(sd, values)
+		func.V_VAr_setter(sd, values, modeldict)
 		html = "quregelung.html"
 	#code fuer maxP-Regelung 
 	if 'maxPvalue' in values:
+		mdlnmbBS = modeldict['121']
+		mdlnmbNAME = modeldict['120']
 		wmax = float(sd.device.models_list[mdlnmbNAME].points['WRtg'].value_getter())
 		sd.device.models_list[mdlnmbBS].points['WMax'].value_setter(float(values['maxPvalue'])*wmax*0.01)
 		sd.device.models_list[mdlnmbBS].write_points()
@@ -105,12 +79,11 @@ def control():
 		#sortiert nach Spannung
 		values["valuesV"], values["valuesW"] = (list(t) for t in zip(*sorted(zip(values["valuesV"], values["valuesW"]))))
 		#schreibt werte
-		func.V_W_setter(sd, values)
+		func.V_W_setter(sd, values, modeldict)
 		html = "puregelung.html"
 	#code fuer Q/P(U)-Regelung
 	if 'valuesV' in values and 'valuesQuo' in values:
 		#wandelt alle Werte in float
-		print(values)
 		for key in values:
 			if key == 'checklist':
 				continue
@@ -118,7 +91,7 @@ def control():
 		#sortiert nach Spannung
 		values["valuesV"], values["valuesQuo"] = (list(t) for t in zip(*sorted(zip(values["valuesV"], values["valuesQuo"]))))
 		#schreibt werte
-		func.V_Quo_setter(sd, values)
+		func.V_Quo_setter(sd, values, modeldict)
 		html = "quouregelung.html"
 	#code fuer regelungswahl
 	if 'controltype' in values:
@@ -132,12 +105,17 @@ def control():
 			html = "quregelung.html"
 	#code fuer regelungsaktivierung
 	if 'checklist' in values:
-		set_control(values["checkname"], values["checklist"])
+		set_control(values["checkname"], values["checklist"], sd)
 		return "switched"
+	sd.close()
 	return index(html)
 	
 @app.route('/deleteEntry', methods = ['POST'])
 def deleteEntry():
+	sd = func.readInverter()
+	modeldict = func.getModelDict(sd)
+	mdlnmbPU = modeldict['132']
+	mdlnmbQU = modeldict['126']
 	values = request.get_json(force=True)
 	target = int(values['target'])
 	if 'valuesV' in values and 'valuesW' in values:
@@ -151,7 +129,7 @@ def deleteEntry():
 			element=values[key][target]
 			del values[key][target]
 			values[key].append(element)
-		func.V_W_setter(sd, values)
+		func.V_W_setter(sd, values, modeldict)
 		ActPt = sd.device.models_list[mdlnmbPU].blocks[1].points["ActPt"].value_getter()
 		sd.device.models_list[mdlnmbPU].blocks[1].points["ActPt"].value_setter(ActPt-1)
 		sd.volt_watt.write()
@@ -166,7 +144,7 @@ def deleteEntry():
 			element=values[key][target]
 			del values[key][target]
 			values[key].append(element)
-		func.V_Quo_setter(sd, values)
+		func.V_Quo_setter(sd, values, modeldict)
 		ActPt = sd.device.models_list[mdlnmbQU].blocks[1].points["ActPt"].value_getter()
 		sd.device.models_list[mdlnmbQU].blocks[1].points["ActPt"].value_setter(ActPt-1)
 		sd.volt_var.write()
@@ -181,16 +159,21 @@ def deleteEntry():
 			element=values[key][target]
 			del values[key][target]
 			values[key].append(element)
-		func.V_VAr_setter(sd, values)
+		func.V_VAr_setter(sd, values, modeldict)
 		ActPt = sd.device.models_list[mdlnmbQU].blocks[1].points["ActPt"].value_getter()
 		sd.device.models_list[mdlnmbQU].blocks[1].points["ActPt"].value_setter(ActPt-1)
 		sd.volt_var.write()
+		sd.close()
 	return jsonify(newvalues = values)
 	
 @app.route('/getstatus', methods=['GET', 'POST'])
 def post():
+	sd = func.readInverter()
+	modeldict = func.getModelDict(sd)
 	keys = request.form.get('keys')
-	post_models = request.form.get('models')
+	keys = ast.literal_eval(keys)
+	post_modelsPOST = request.form.get('models')
+	post_models = ast.literal_eval(post_modelsPOST)
 	alldict={}
 	allmodels={}
 	status={}
@@ -201,8 +184,10 @@ def post():
 			else:
 				label = '(%s)' % (str(model.id))
 			alldict.update({label: {}})
-			if label in post_models:
-				allmodels.update({label: {}})
+			if str(model.id) in post_models:
+				for id in post_models:
+					if id == str(model.id):
+						allmodels.update({label: {}})
 			for block in model.blocks:
 				if block.index > 0:
 				  index = '%02d:' % (block.index)
@@ -224,37 +209,44 @@ def post():
 						else:
 							value = str(point.value).rstrip('\0')
 						alldict[label].update({label2:{"point_id": point.point_type.id, "value":value, "unit":str(units)}})
-						if label in post_models:
-							allmodels[label].update({label2:{"point_id": point.point_type.id, "value":value, "unit":str(units)}})
+						if str(model.id) in post_models:
+							for number in post_models:
+								if number == str(model.id):
+									allmodels[label].update({label2:{"point_id": point.point_type.id, "value":value, "unit":str(units)}})
 	if "live" in keys:
-		status.update({'livedata': get_status()})
+		status.update({'livedata': get_status(sd, modeldict)})
 	if 'controlvwatt' in keys:
-		status.update({'controlvwatt':func.V_W_getter(sd)})
+		status.update({'controlvwatt':func.V_W_getter(sd, modeldict)})
 	if 'controlvvar' in keys:
-		status.update({'controlvvar':func.V_VAr_getter(sd)})
+		status.update({'controlvvar':func.V_VAr_getter(sd, modeldict)})
 	if 'controlvfactor' in keys:
-		status.update({'controlvfactor':func.V_quo_getter(sd)})
+		status.update({'controlvfactor':func.V_quo_getter(sd, modeldict)})
 	if 'controlmaxp' in keys:
 		maxPFile = open('logs/maxP.txt', 'r')
 		for line in maxPFile:
 			status.update({'controlmaxp':line})
 	if 'basic_settings' in keys:
-		status.update({'basic_settings':func.basic_settings_getter(sd)})
+		status.update({'basic_settings':func.basic_settings_getter(sd, modeldict)})
 	if "all" in keys:
-		status.update({'livedata': get_status()})
+		status.update({'livedata': get_status(sd, modeldict)})
 		status.update(alldict)
-		status.update({'controlvwatt':func.V_W_getter(sd)})
-		status.update({'controlvvar':func.V_VAr_getter(sd)})
-		status.update({'controlvfactor':func.V_quo_getter(sd)})
+		status.update({'controlvwatt':func.V_W_getter(sd, modeldict)})
+		status.update({'controlvvar':func.V_VAr_getter(sd, modeldict)})
+		status.update({'controlvfactor':func.V_quo_getter(sd, modeldict)})
 		maxPFile = open('logs/maxP.txt', 'r')
 		for line in maxPFile:
 			status.update({'controlmaxp':line})
 	if post_models:
 		status.update(allmodels)
+	sd.close()
 	return jsonify(status)
 
 @app.route('/writestatus', methods = ['POST', 'GET'])
 def writestatus():
+	sd = func.readInverter()
+	modeldict = func.getModelDict(sd)
+	mdlnmbNAME = modeldict['120']
+	mdlnmbBS = modeldict['121']
 	controls = request.json
 	newcontrols = {}
 	#verbindet alle Eingabedicts zu einem
@@ -272,7 +264,7 @@ def writestatus():
 			#sortiert nach Spannung
 			valuesvvar["valuesV"], valuesvvar["valuesVAr"] = (list(t) for t in zip(*sorted(zip(valuesvvar["valuesV"], valuesvvar["valuesVAr"]))))
 			#schreibt Werte
-			func.V_VAr_setter(sd, valuesvvar)
+			func.V_VAr_setter(sd, valuesvvar, modeldict)
 		if key == "controlvfactor":
 			valuesvvar = {'valuesV':[],'valuesQuo':[]}
 			for value in newcontrols[key]:
@@ -287,7 +279,7 @@ def writestatus():
 			#sortiert nach Spannung
 			valuesvvar["valuesV"], valuesvvar["valuesQuo"] = (list(t) for t in zip(*sorted(zip(valuesvvar["valuesV"], valuesvvar["valuesQuo"]))))
 			#schreibt Werte
-			func.V_Quo_setter(sd, valuesvvar)
+			func.V_Quo_setter(sd, valuesvvar, modeldict)
 		if key == "controlvwatt":
 			valuesvvar = {'valuesV':[],'valuesW':[]}
 			for value in newcontrols[key]:
@@ -302,25 +294,25 @@ def writestatus():
 			#sortiert nach Spannung
 			valuesvvar["valuesV"], valuesvvar["valuesW"] = (list(t) for t in zip(*sorted(zip(valuesvvar["valuesV"], valuesvvar["valuesW"]))))
 			#schreibt Werte
-			func.V_W_setter(sd, valuesvvar)
+			func.V_W_setter(sd, valuesvvar, modeldict)
 		if key == "controlmaxp":
 			wmax = float(sd.device.models_list[mdlnmbNAME].points['WRtg'].value_getter())
-			sd.device.models_list[mdlnmbBS].points['WMax'].value_setter(newcontrols[key]*wmax*0.01)
+			sd.device.models_list[mdlnmbBS].points['WMax'].value_setter(float(newcontrols[key])*wmax*0.01)
 			sd.device.models_list[mdlnmbBS].write_points()
 			maxPFile = open('logs/maxP.txt', 'w')
 			maxPFile.write(newcontrols[key])
 			maxPFile.close()
 		if key == "activate":
 			for control in newcontrols["activate"]:
-				set_control(control[0],control[1])
+				set_control(control[0],control[1], sd)
+	sd.close()
 	return "successfully changed controlsettings"
 	
 	
-def get_status():
-	sd.read()
+def get_status(sd, modeldict):
 	i = 0
 	invvalues = []
-	
+	mdlnmbINV = 1#modeldict['103']
 	invmodel = sd.device.models_list[mdlnmbINV]
 	
 	for point in invmodel.blocks[0].points_list:
@@ -331,8 +323,11 @@ def get_status():
 		i += 1
 	return invvalues
 	
-def get_control():
-	sd.read()
+def get_control(sd, modeldict):
+	mdlnmbNAME = modeldict['120']
+	mdlnmbBS = modeldict['121']
+	mdlnmbPU = modeldict['132']
+	mdlnmbQU = modeldict['126']
 	actCntrl = []
 	setMaxP = float(sd.device.models_list[mdlnmbBS].points['WMax'].value_getter())
 	globalMaxP = float(sd.device.models_list[mdlnmbNAME].points['WRtg'].value_getter())
@@ -350,8 +345,12 @@ def get_control():
 		actCntrl.append("false")
 	return actCntrl	
 	
-def set_control(name, value):
-	sd.read()
+def set_control(name, value, sd):
+	modeldict = func.getModelDict(sd)
+	mdlnmbQU = modeldict['126']
+	mdlnmbBS = modeldict['121']
+	mdlnmbPU = modeldict['132']
+	mdlnmbNAME = modeldict['120']
 	if name == "qu":
 		#schreibt ActCrv in Q(U)
 		if value == "true":
@@ -384,6 +383,6 @@ def set_control(name, value):
     
 	
 if __name__ == '__main__':
-    app.run(host='0.0.0.0')
+    app.run(debug=True, host='0.0.0.0')
     
 
