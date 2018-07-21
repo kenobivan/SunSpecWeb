@@ -25,6 +25,7 @@
                         <br><br>
                         <button type="button" id="maxValueButton">Absenden</button>
                         <h4 id="modelText" style="color:red;"></h4>
+                        <center><h3 id="controlText" style="color:red;"></h3></center>
                     </form>            
                 </div>
         
@@ -38,10 +39,12 @@
 	window.setInterval(function(){
 		  if (($("#maxPvalue").val())>0 && $("#maxPvalue").val() <= 100) {
 			  var text = "Achtung! Mit Betätigen des Submit-Buttons wird folgende Regelung gespeichert: ";
-			  $("#modelText").text(text + $("#maxPvalue").val() + "% von " + $("#maximumPower").text() + "W (" + ($("#maxPvalue").val()*parseFloat($("#maximumPower").text())*0.01 ) + "W)");
+			  $("#modelText").text(text);
+			  $("#controlText").text($("#maxPvalue").val() + "% von " + $("#maximumPower").text() + "W (" + ($("#maxPvalue").val()*parseFloat($("#maximumPower").text())*0.01 ) + "W)")
 		  } else {
 			  var text = "Ungültige Eingabe!";
 			  $("#modelText").text(text);
+			  $("#controlText").text("");
 			}
 		  
 		}, 1000);
