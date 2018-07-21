@@ -135,7 +135,7 @@ def V_quo_getter(sd, modeldict):
 	values = []
 	ActPt = 0
 	mdlnmbQU = modeldict['126']
-	mdlnmbBS = modeldict['121']
+	mdlnmbNAME = modeldict['120']
 	ActPt = sd.device.models_list[mdlnmbQU].blocks[1].points['ActPt'].value_getter()
 			
 
@@ -147,7 +147,7 @@ def V_quo_getter(sd, modeldict):
 
 		v_value = sd.device.models_list[mdlnmbQU].blocks[1].points[searchV].value_getter()
 		var_value = sd.device.models_list[mdlnmbQU].blocks[1].points[searchVAr].value_getter()
-		quotientQWmax = round(float(var_value)/float(sd.device.models_list[mdlnmbBS].points['WMax'].value_getter()),3)
+		quotientQWmax = round(float(var_value)/float(sd.device.models_list[mdlnmbNAME].points['WRtg'].value_getter()),3)
 
 		#bildet Tupel aus den gewonnenen Werten und haengt es an Liste
 		pov = (v_value, var_value, quotientQWmax)
@@ -157,7 +157,7 @@ def V_quo_getter(sd, modeldict):
 	
 def V_Quo_setter(sd, values, modeldict):
 	mdlnmbQU = modeldict['126']
-	mdlnmbBS = modeldict['121']
+	mdlnmbNAME = modeldict['120']
 	#schreibt V-Wert
 	for index, v in enumerate(values["valuesV"]):
 		strV = "V" + str(index+1)
@@ -165,7 +165,7 @@ def V_Quo_setter(sd, values, modeldict):
 	#schreibt VAr-Werte
 	for index, quo in enumerate(values["valuesQuo"]):
 		strVAr = "VAr" + str(index+1)
-		sd.volt_var.curve[1][strVAr] = (quo * float(sd.device.models_list[mdlnmbBS].points['WMax'].value_getter()))
+		sd.volt_var.curve[1][strVAr] = (quo * float(sd.device.models_list[mdlnmbNAME].points['WRtg'].value_getter()))
 		newActPt = index+1
 	#setzt ActPt neu
 	sd.device.models_list[mdlnmbQU].blocks[1].points["ActPt"].value_setter(newActPt)

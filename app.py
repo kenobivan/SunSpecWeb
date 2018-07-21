@@ -28,10 +28,10 @@ def index(html="quregelung.html"):
 		values.update({'result': result})
 	elif html == "puregelung.html":
 		values = {'valuesvwatt':func.V_W_getter(sd, modeldict)}
-		values.update({'wmax': sd.device.models_list[mdlnmbBS].points['WMax'].value_getter(), 'vref': sd.device.models_list[mdlnmbBS].points['VRef'].value_getter()})
+		values.update({'wmax': float(sd.device.models_list[mdlnmbNAME].points['WRtg'].value_getter()), 'vref': sd.device.models_list[mdlnmbBS].points['VRef'].value_getter()})
 	elif html == "quouregelung.html":
 		values = {'valuesquo':func.V_quo_getter(sd, modeldict)}
-		values.update({'wmax': sd.device.models_list[mdlnmbBS].points['WMax'].value_getter(), 'vref': sd.device.models_list[mdlnmbBS].points['VRef'].value_getter()})
+		values.update({'wmax': float(sd.device.models_list[mdlnmbNAME].points['WRtg'].value_getter()), 'vref': sd.device.models_list[mdlnmbBS].points['VRef'].value_getter()})
 	else:
 		values = {'valuesvvar':func.V_VAr_getter(sd, modeldict)}
 		values.update({'vref': sd.device.models_list[mdlnmbBS].points['VRef'].value_getter()})
