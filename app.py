@@ -34,7 +34,7 @@ def index(html="quregelung.html"):
 		values.update({'wmax': float(sd.device.models_list[mdlnmbNAME].points['WRtg'].value_getter()), 'vref': sd.device.models_list[mdlnmbBS].points['VRef'].value_getter()})
 	else:
 		values = {'valuesvvar':func.V_VAr_getter(sd, modeldict)}
-		values.update({'vref': sd.device.models_list[mdlnmbBS].points['VRef'].value_getter()})
+		values.update({'wmax': float(sd.device.models_list[mdlnmbNAME].points['WRtg'].value_getter()),'vref': sd.device.models_list[mdlnmbBS].points['VRef'].value_getter()})
 	status = get_status(sd, modeldict)
 	actCntrl = get_control(sd, modeldict)
 	sd.close()
@@ -312,7 +312,13 @@ def writestatus():
 def get_status(sd, modeldict):
 	i = 0
 	invvalues = []
-	mdlnmbINV = 1#modeldict['103']
+	try:
+		mdlnmbINV = modeldict['103']
+	except:
+		try:
+			mdlnmbINV = modeldict['102']
+		except:
+			mdlnmbINV = modeldict['101']
 	invmodel = sd.device.models_list[mdlnmbINV]
 	
 	for point in invmodel.blocks[0].points_list:

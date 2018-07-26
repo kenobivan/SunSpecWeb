@@ -12,13 +12,13 @@
 			  <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
 				<div class="navbar-nav">
 				  <a class="nav-item nav-link active" href="#" name="quregelung.html">Q(U)<span class="sr-only">(current)</span></a>
-				  <a class="nav-item nav-link" href="#" name="quouregelung.html">Q/Pmax(U)</a>
 				  <a class="nav-item nav-link" href="#" name="maxpregelung.html">max-P</a>
 				  <a class="nav-item nav-link" href="#" name="puregelung.html">P(U)</a>
 				</div>
 			  </div>
 			</nav>
 			<p>VRef: {{values['vref']}}V</p>
+			<p>PMax: {{values['wmax']}}W</p>
 			<div id="wrapper">
 				<div class="quregelung" style="margin-top:10px;">
 					<form id="extraRow">
@@ -26,15 +26,11 @@
 							<div class="form-row">
 								<div class="col-sm-" >
 									<p>Spannung (in % von VRef):</p>
-									<input type="text" class="form-control" name="V{{loop.index}}" value="{{ value[0] }}" style="width:30%;">
+									<input type="text" class="form-control" name="V{{loop.index}}" value="{{ value[0] }}" style="width:50%;">
 								</div>
 								<div class="col-sm-" >
-									<p>Blindleistung (in VAr):</p>
+									<p>Blindleistung (in % von PMax):</p>
 									<input type="text" class="form-control" name="VAr{{loop.index}}" value="{{ value[1] }}" style="width:50%;">
-								</div>
-								<div class="col-sm-" >
-									<p>Q/Wmax:</p>
-									<p>{{value[2]}}</p>
 								</div>
 								<button id="{{loop.index}}" class="minus" type="button" style=" float:left; margin-top:15px; margin-right: 10px;">Löschen</button>
 							</div>

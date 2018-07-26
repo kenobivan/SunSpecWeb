@@ -35,7 +35,13 @@ def get_status():
 	sd.read()
 	with open("logs/modeldict.txt", mode='r') as jsonfile:
 		modeldict = json.load(jsonfile)
-	mdlnmbINV = modeldict['103']
+	try:
+		mdlnmbINV = modeldict['103']
+	except:
+		try:
+			mdlnmbINV = modeldict['102']
+		except:
+			mdlnmbINV = modeldict['101']
 	i = 0
 	invvalues = []
 	
@@ -75,9 +81,10 @@ invvalues = get_status()
 livedict = {}
 for value in invvalues:
 	livedict.update({value[0]: float(value[1])})
+print(livedict)
 
 
-# datapoints ist liste mit beliebig viequirlen Einträgen, die gespeichert werden sollen (mehr als 1000 würde ich nicht auf einmal schicken)
+# datapoints ist liste mit beliebig vielen Einträgen, die gespeichert werden sollen (mehr als 1000 würde ich nicht auf einmal schicken)
 datapoints=[
         {'grid': 'testgrid',
            'measurement': 'pv_controller_prototype',
@@ -97,7 +104,7 @@ if os.stat("logs/data.txt").st_size != 0:
 		datapoints.append(jsonlist[0])
 json_data={"grid":"testgrid","datapoints":datapoints}
 try:
-	r = requests.post('http://129.69.127.226:13333/api/writ', json=json_data)
+	r = requests.post('http://129.69.127.226:13333/api/write', json=json_data)
 	print(r.status_code)
 	if r.status_code != 200:
 		writeAfterError(datapointsNew)

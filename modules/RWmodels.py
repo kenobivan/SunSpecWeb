@@ -7,7 +7,7 @@ import os
 
 def readInverter():
 	slaveid = 1#126
-	ipaddr = '127.0.0.1'#'192.168.0.111'
+	ipaddr = '127.0.1.1'#192.168.0.111'
 	ipport = 502
 	timeout = 2.0
 	transtype = 'tcp'
