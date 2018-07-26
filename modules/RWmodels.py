@@ -130,49 +130,6 @@ def V_W_setter(sd, values, modeldict):
 	sd.volt_watt.write()
 	return(values)
 	
-def V_quo_getter(sd, modeldict):
-	#zeigt nur die eingestellten Werte an
-	values = []
-	ActPt = 0
-	mdlnmbQU = modeldict['126']
-	mdlnmbNAME = modeldict['120']
-	ActPt = sd.device.models_list[mdlnmbQU].blocks[1].points['ActPt'].value_getter()
-			
-
-	for index in range(ActPt):
-	#sucht aktivierte Werte heraus
-
-		searchV = "V" + str(index+1)
-		searchVAr = "VAr" + str(index+1)
-
-		v_value = sd.device.models_list[mdlnmbQU].blocks[1].points[searchV].value_getter()
-		var_value = sd.device.models_list[mdlnmbQU].blocks[1].points[searchVAr].value_getter()
-		quotientQWmax = round(float(var_value)/float(sd.device.models_list[mdlnmbNAME].points['WRtg'].value_getter()),3)
-
-		#bildet Tupel aus den gewonnenen Werten und haengt es an Liste
-		pov = (v_value, var_value, quotientQWmax)
-		values.append(pov)
-
-	return(values)
-	
-def V_Quo_setter(sd, values, modeldict):
-	mdlnmbQU = modeldict['126']
-	mdlnmbNAME = modeldict['120']
-	#schreibt V-Wert
-	for index, v in enumerate(values["valuesV"]):
-		strV = "V" + str(index+1)
-		sd.volt_var.curve[1][strV] = v
-	#schreibt VAr-Werte
-	for index, quo in enumerate(values["valuesQuo"]):
-		strVAr = "VAr" + str(index+1)
-		sd.volt_var.curve[1][strVAr] = (quo * float(sd.device.models_list[mdlnmbNAME].points['WRtg'].value_getter()))
-		newActPt = index+1
-	#setzt ActPt neu
-	sd.device.models_list[mdlnmbQU].blocks[1].points["ActPt"].value_setter(newActPt)
-	#sichert Aenderungen	
-	sd.volt_var.write()
-	return(values)
-	
 def basic_settings_getter(sd, modeldict):
 	sd.read()
 	mdlnmbBS = modeldict['121']

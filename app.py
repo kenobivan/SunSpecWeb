@@ -29,9 +29,6 @@ def index(html="quregelung.html"):
 	elif html == "puregelung.html":
 		values = {'valuesvwatt':func.V_W_getter(sd, modeldict)}
 		values.update({'wmax': float(sd.device.models_list[mdlnmbNAME].points['WRtg'].value_getter()), 'vref': sd.device.models_list[mdlnmbBS].points['VRef'].value_getter()})
-	elif html == "quouregelung.html":
-		values = {'valuesquo':func.V_quo_getter(sd, modeldict)}
-		values.update({'wmax': float(sd.device.models_list[mdlnmbNAME].points['WRtg'].value_getter()), 'vref': sd.device.models_list[mdlnmbBS].points['VRef'].value_getter()})
 	else:
 		values = {'valuesvvar':func.V_VAr_getter(sd, modeldict)}
 		values.update({'wmax': float(sd.device.models_list[mdlnmbNAME].points['WRtg'].value_getter()),'vref': sd.device.models_list[mdlnmbBS].points['VRef'].value_getter()})
@@ -81,26 +78,12 @@ def control():
 		#schreibt werte
 		func.V_W_setter(sd, values, modeldict)
 		html = "puregelung.html"
-	#code fuer Q/P(U)-Regelung
-	if 'valuesV' in values and 'valuesQuo' in values:
-		#wandelt alle Werte in float
-		for key in values:
-			if key == 'checklist':
-				continue
-			values[key] = [float(x) for x in values[key]]
-		#sortiert nach Spannung
-		values["valuesV"], values["valuesQuo"] = (list(t) for t in zip(*sorted(zip(values["valuesV"], values["valuesQuo"]))))
-		#schreibt werte
-		func.V_Quo_setter(sd, values, modeldict)
-		html = "quouregelung.html"
 	#code fuer regelungswahl
 	if 'controltype' in values:
 		if values["controltype"] == 'max-P':
 			html = "maxpregelung.html"
 		elif values["controltype"] == 'P(U)':
 			html = "puregelung.html"
-		elif values["controltype"] == 'Q/Pmax(U)':
-			html = "quouregelung.html"
 		else:
 			html = "quregelung.html"
 	#code fuer regelungsaktivierung
@@ -219,8 +202,6 @@ def post():
 		status.update({'controlvwatt':func.V_W_getter(sd, modeldict)})
 	if 'controlvvar' in keys:
 		status.update({'controlvvar':func.V_VAr_getter(sd, modeldict)})
-	if 'controlvfactor' in keys:
-		status.update({'controlvfactor':func.V_quo_getter(sd, modeldict)})
 	if 'controlmaxp' in keys:
 		maxPFile = open('logs/maxP.txt', 'r')
 		for line in maxPFile:
@@ -265,21 +246,6 @@ def writestatus():
 			valuesvvar["valuesV"], valuesvvar["valuesVAr"] = (list(t) for t in zip(*sorted(zip(valuesvvar["valuesV"], valuesvvar["valuesVAr"]))))
 			#schreibt Werte
 			func.V_VAr_setter(sd, valuesvvar, modeldict)
-		if key == "controlvfactor":
-			valuesvvar = {'valuesV':[],'valuesQuo':[]}
-			for value in newcontrols[key]:
-				if value[0] > 0:
-					valuesvvar['valuesV'].append(value[0])
-				else:
-					return "ERROR: Fehlerhafte Spannungseingabe"
-				if value[1] <= 1 and value[1] >= -1:
-					valuesvvar['valuesQuo'].append(value[1])
-				else:
-					return "ERROR: Fehlerhafte Faktoringabe"
-			#sortiert nach Spannung
-			valuesvvar["valuesV"], valuesvvar["valuesQuo"] = (list(t) for t in zip(*sorted(zip(valuesvvar["valuesV"], valuesvvar["valuesQuo"]))))
-			#schreibt Werte
-			func.V_Quo_setter(sd, valuesvvar, modeldict)
 		if key == "controlvwatt":
 			valuesvvar = {'valuesV':[],'valuesW':[]}
 			for value in newcontrols[key]:
